@@ -1,14 +1,9 @@
 mod internal;
 pub(crate) mod line_wrapper;
 mod render_line;
-pub mod status_line;
-#[cfg(feature = "syntax-highlighting")]
-pub(crate) mod syntax_higlighting;
 pub mod theme;
 
 use render_line::RenderLine;
-#[cfg(feature = "syntax-highlighting")]
-use syntax_higlighting::SyntaxHighlighter;
 
 use crate::{
     helper::{max_col, rect_indent_y},
@@ -17,12 +12,9 @@ use crate::{
 };
 
 use internal::into_spans_with_selections;
-#[cfg(feature = "syntax-highlighting")]
-use internal::line_into_highlighted_spans_with_selections;
 use jagged::index::RowIndex;
 use line_wrapper::LineWrapper;
 use ratatui::{prelude::*, widgets::Widget};
-pub use status_line::EditorStatusLine;
 use theme::EditorTheme;
 
 /// Creates the view for the editor. [`EditorView`] and [`EditorState`] are
@@ -48,10 +40,6 @@ pub struct EditorView<'a, 'b> {
 
     /// The editor theme.
     pub(crate) theme: EditorTheme<'b>,
-
-    /// An optional syntax highlighter.
-    #[cfg(feature = "syntax-highlighting")]
-    pub(crate) syntax_highlighter: Option<SyntaxHighlighter>,
 }
 
 impl<'a, 'b> EditorView<'a, 'b> {
@@ -61,8 +49,6 @@ impl<'a, 'b> EditorView<'a, 'b> {
         Self {
             state,
             theme: EditorTheme::default(),
-            #[cfg(feature = "syntax-highlighting")]
-            syntax_highlighter: None,
         }
     }
 
@@ -71,28 +57,6 @@ impl<'a, 'b> EditorView<'a, 'b> {
     #[must_use]
     pub fn theme(mut self, theme: EditorTheme<'b>) -> Self {
         self.theme = theme;
-        self
-    }
-
-    #[cfg(feature = "syntax-highlighting")]
-    /// Set the syntax highlighter for the [`EditorView`]
-    /// See [`SyntaxHighlighter`] for the more information.
-    ///
-    /// ```rust
-    /// #[cfg(feature = "syntax-highlighting")]
-    /// {
-    ///     use edtui::EditorState;
-    ///     use edtui::EditorView;
-    ///     use edtui::SyntaxHighlighter;
-    ///
-    ///     let syntax_highlighter = SyntaxHighlighter::new("dracula", "rs");
-    ///     EditorView::new(&mut EditorState::default())
-    ///         .syntax_highlighter(Some(syntax_highlighter));
-    /// }
-    /// ```
-    #[must_use]
-    pub fn syntax_highlighter(mut self, syntax_highlighter: Option<SyntaxHighlighter>) -> Self {
-        self.syntax_highlighter = syntax_highlighter;
         self
     }
 
@@ -148,12 +112,7 @@ impl Widget for EditorView<'_, '_> {
             None => area,
         };
 
-        // Split into main section and status line
-        let [main, status] = Layout::vertical([
-            Constraint::Min(0),
-            Constraint::Length(u16::from(self.theme.status_line.is_some())),
-        ])
-        .areas(area);
+        let main = Layout::vertical([Constraint::Percentage(100)]).split(area)[0];
         let width = main.width as usize;
         let height = main.height as usize;
         let wrap_lines = self.get_wrap();
@@ -212,8 +171,6 @@ impl Widget for EditorView<'_, '_> {
                 col_skips,
                 &self.theme.base,
                 &self.theme.selection_style,
-                #[cfg(feature = "syntax-highlighting")]
-                self.syntax_highlighter.as_ref(),
             );
 
             let render_line = if wrap_lines {
@@ -252,17 +209,6 @@ impl Widget for EditorView<'_, '_> {
         // Save the total number of lines that are currently displayed on the viewport.
         // Required to handle scrolling.
         self.state.view.update_num_rows(num_rendered_rows);
-
-        // Render the status line.
-        if let Some(s) = self.theme.status_line {
-            s.mode(self.state.mode.name())
-                .search(if self.state.mode == EditorMode::Search {
-                    Some(self.state.search_pattern())
-                } else {
-                    None
-                })
-                .render(status, buf);
-        }
     }
 }
 
@@ -273,19 +219,7 @@ fn generate_spans<'a>(
     col_skips: usize,
     base_style: &Style,
     highlight_style: &Style,
-    #[cfg(feature = "syntax-highlighting")] syntax_highlighter: Option<&SyntaxHighlighter>,
 ) -> Vec<Span<'a>> {
-    #[cfg(feature = "syntax-highlighting")]
-    if let Some(syntax) = syntax_highlighter {
-        return line_into_highlighted_spans_with_selections(
-            line,
-            selections,
-            syntax,
-            row_index,
-            col_skips,
-            highlight_style,
-        );
-    }
     into_spans_with_selections(
         line,
         selections,

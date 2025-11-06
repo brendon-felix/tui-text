@@ -1,4 +1,3 @@
-pub(crate) mod deprecated_input;
 mod key;
 #[cfg(feature = "mouse-support")]
 pub(crate) mod mouse;

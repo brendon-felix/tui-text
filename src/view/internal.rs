@@ -1,8 +1,3 @@
-//! A collection of internal datatypes for rendering.
-//!
-//! TODO: Refactor.
-#[cfg(feature = "syntax-highlighting")]
-use crate::SyntaxHighlighter;
 use crate::{
     helper::{char_width, span_width, split_str_at},
     state::selection::Selection,
@@ -211,37 +206,6 @@ pub(crate) fn into_spans_with_selections<'a>(
     push_span(current_span.clone(), previous_is_selected);
 
     spans
-}
-
-#[cfg(feature = "syntax-highlighting")]
-pub(crate) fn line_into_highlighted_spans_with_selections<'a>(
-    line: &[char],
-    selections: &[&Option<Selection>],
-    syntax_highligher: &SyntaxHighlighter,
-    row_index: usize,
-    col_skips: usize,
-    highlight_style: &Style,
-) -> Vec<Span<'a>> {
-    let line: String = line.iter().collect();
-    let mut internal_spans = syntax_highligher.highlight_line(&line);
-
-    let selections = selections
-        .iter()
-        .filter_map(|selection| selection.as_ref().filter(|s| s.contains_row(row_index)));
-
-    for selection in selections {
-        if let Some(new_span) =
-            InternalSpan::apply_selection(&internal_spans, row_index, selection, highlight_style)
-        {
-            internal_spans = new_span;
-        }
-    }
-
-    if col_skips > 0 {
-        InternalSpan::crop_spans(&mut internal_spans, col_skips);
-    }
-
-    internal_spans.into_iter().map(Span::from).collect()
 }
 
 /// Finds the position of a character within wrapped spans based on a given
