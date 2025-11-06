@@ -278,20 +278,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "edtui"
-version = "0.9.8"
-dependencies = [
- "arbitrary",
- "arboard",
- "edtui-jagged",
- "enum_dispatch",
- "once_cell",
- "ratatui",
- "syntect",
- "unicode-width 0.2.0",
-]
-
-[[package]]
 name = "edtui-jagged"
 version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1081,6 +1067,20 @@ checksum = "2834e6017e3e5e4b9834939793b282bc03b37a3336245fa820e35e233e2a85de"
 dependencies = [
  "num-conv",
  "time-core",
+]
+
+[[package]]
+name = "tui-text"
+version = "0.9.8"
+dependencies = [
+ "arbitrary",
+ "arboard",
+ "edtui-jagged",
+ "enum_dispatch",
+ "once_cell",
+ "ratatui",
+ "syntect",
+ "unicode-width 0.2.0",
 ]
 
 [[package]]
